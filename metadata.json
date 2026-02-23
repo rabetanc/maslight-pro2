@@ -1,0 +1,5 @@
+{
+  "name": "MasLight Solar Dashboard",
+  "description": "Advanced solar simulation and financial analysis tool for MasLight Solar, featuring CREG 174 regulation compliance.",
+  "requestFramePermissions": ["geolocation"]
+}
