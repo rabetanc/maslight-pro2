@@ -2,13 +2,20 @@ import { MonthlyData, SimulationResult } from '../types';
 import { PERFIL_GEN_SOLAR, MONTHS } from '../constants';
 
 export async function fetchPVGISData(lat: number, lon: number): Promise<number[] | null> {
-  const url = `/api/pvgis?lat=${lat}&lon=${lon}`;
-  
+  // Usamos un proxy para evitar el error de CORS (bloqueo de seguridad)
+  const proxy = "https://cors-anywhere.herokuapp.com/";
+  const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&outputformat=json`;
+
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("Failed to fetch from proxy");
-    const data = await resp.json();
-    return data.outputs.monthly.fixed.map((mes: any) => mes.E_m);
+    const response = await fetch(proxy + pvgisUrl);
+    
+    if (!response.ok) {
+      throw new Error('Error en la respuesta de PVGIS');
+    }
+
+    const data = await response.json();
+    // Extraemos la producción mensual (irradiación)
+    return data.outputs.monthly.map((month: any) => month.E_m);
   } catch (error) {
     console.error("Error fetching PVGIS data:", error);
     return null;
