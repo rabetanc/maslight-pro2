@@ -2,30 +2,21 @@ import { MonthlyData, SimulationResult } from '../types';
 import { PERFIL_GEN_SOLAR, MONTHS } from '../constants';
 
 export async function fetchPVGISData(lat: number, lon: number): Promise<number[] | null> {
-  // Usamos corsproxy.io que es más directo y robusto
-  const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&outputformat=json`;
-  const url = `https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`;
+  // Ahora usamos nuestra propia ruta configurada en vercel.json
+  const url = `/api/pvgis?lat=${lat}&lon=${lon}&peakpower=1&loss=14&outputformat=json`;
 
   try {
     const response = await fetch(url);
-    
-    if (!response.ok) {
-      console.error("Respuesta de red no exitosa");
-      return null;
-    }
+    if (!response.ok) throw new Error('Error en servidor');
     
     const data = await response.json();
 
-    // Verificación ultra-segura de la estructura de datos
-    if (data && data.outputs && data.outputs.monthly && Array.isArray(data.outputs.monthly)) {
+    if (data && data.outputs && data.outputs.monthly) {
       return data.outputs.monthly.map((month: any) => month.E_m);
-    } else {
-      console.error("La estructura de PVGIS no es la esperada:", data);
-      return null;
     }
+    return null;
   } catch (error) {
-    console.error("Error crítico en la petición:", error);
-    // Retornamos null en lugar de dejar que la App lance un error de .map()
+    console.error("Error:", error);
     return null;
   }
 }
