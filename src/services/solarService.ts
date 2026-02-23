@@ -2,21 +2,29 @@ import { MonthlyData, SimulationResult } from '../types';
 import { PERFIL_GEN_SOLAR, MONTHS } from '../constants';
 
 export async function fetchPVGISData(lat: number, lon: number): Promise<number[] | null> {
-  // Ahora usamos nuestra propia ruta configurada en vercel.json
+  // Añadimos explícitamente &outputformat=json al final de la URL
   const url = `/api/pvgis?lat=${lat}&lon=${lon}&peakpower=1&loss=14&outputformat=json`;
 
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Error en servidor');
     
+    if (!response.ok) {
+      console.error("Error en la respuesta del servidor");
+      return null;
+    }
+
     const data = await response.json();
 
+    // Verificamos si la respuesta contiene la estructura de meses esperada
     if (data && data.outputs && data.outputs.monthly) {
+      // Extraemos solo el valor de energía (E_m) para cada mes
       return data.outputs.monthly.map((month: any) => month.E_m);
-    }
+    } 
+    
+    console.error("La API respondió pero sin datos mensuales:", data);
     return null;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error al procesar datos solares:", error);
     return null;
   }
 }
