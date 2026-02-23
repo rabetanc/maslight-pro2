@@ -2,26 +2,30 @@ import { MonthlyData, SimulationResult } from '../types';
 import { PERFIL_GEN_SOLAR, MONTHS } from '../constants';
 
 export async function fetchPVGISData(lat: number, lon: number): Promise<number[] | null> {
+  // Usamos corsproxy.io que es más directo y robusto
   const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${lat}&lon=${lon}&peakpower=1&loss=14&outputformat=json`;
-  // Usamos AllOrigins para saltar el bloqueo de CORS
-  const url = `https://api.allorigins.win/get?url=${encodeURIComponent(pvgisUrl)}`;
+  const url = `https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`;
 
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Error de red');
     
-    const wrapper = await response.json();
-    // AllOrigins guarda la respuesta real en la propiedad 'contents' como un texto (string)
-    const data = JSON.parse(wrapper.contents);
-
-    // Verificamos que la estructura interna sea la correcta
-    if (data && data.outputs && data.outputs.monthly) {
-      return data.outputs.monthly.map((month: any) => month.E_m);
+    if (!response.ok) {
+      console.error("Respuesta de red no exitosa");
+      return null;
     }
     
-    return null;
+    const data = await response.json();
+
+    // Verificación ultra-segura de la estructura de datos
+    if (data && data.outputs && data.outputs.monthly && Array.isArray(data.outputs.monthly)) {
+      return data.outputs.monthly.map((month: any) => month.E_m);
+    } else {
+      console.error("La estructura de PVGIS no es la esperada:", data);
+      return null;
+    }
   } catch (error) {
-    console.error("Error detallado:", error);
+    console.error("Error crítico en la petición:", error);
+    // Retornamos null en lugar de dejar que la App lance un error de .map()
     return null;
   }
 }
