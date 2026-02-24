@@ -2,34 +2,26 @@ import { MonthlyData, SimulationResult } from '../types';
 import { PERFIL_GEN_SOLAR, MONTHS } from '../constants';
 
 export async function fetchPVGISData(lat: number, lon: number): Promise<number[] | null> {
-  // Aseguramos que la URL sea limpia
   const url = `/api/pvgis?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&peakpower=1&loss=14&outputformat=json`;
 
   try {
     const response = await fetch(url);
-    
-    // Si Vercel devuelve un error 404 o 500
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Respuesta del servidor no es OK:", errorText);
-      return null;
-    }
+    if (!response.ok) return null;
 
     const data = await response.json();
 
-    // Verificamos si la estructura es la correcta antes de usar .map
-    if (data && data.outputs && data.outputs.monthly && Array.isArray(data.outputs.monthly)) {
-      return data.outputs.monthly.map((month: any) => month.E_m);
+    // AQUÍ ESTABA EL TRUCO: Accedemos a data.outputs.monthly.fixed
+    if (data?.outputs?.monthly?.fixed && Array.isArray(data.outputs.monthly.fixed)) {
+      return data.outputs.monthly.fixed.map((item: any) => item.E_m);
     } 
     
-    console.error("Estructura de JSON inesperada:", data);
+    console.error("Estructura no reconocida:", data);
     return null;
   } catch (error) {
-    console.error("Error al procesar datos solares:", error);
+    console.error("Error al procesar:", error);
     return null;
   }
 }
-
 export function executeSimulation(
   kwp: number,
   monthlyCons: number,
